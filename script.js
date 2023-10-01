@@ -30,53 +30,43 @@ function logoDraw(center) {
   // ctx.restore();
 }
 
-function isWrapedDraw(drawingCallback) {
-  drawingCallback(yaLogoState);
+function wrapedDraw(drawingCallback) {
+  const logoOrigins = [yaLogoState];
 
   if (yaLogoState.x - LOGO_WIDTH / 2 <= 0) {
-    drawingCallback({ x: yaLogoCanvas.width + yaLogoState.x, y: yaLogoState.y });
-  }
-
-  if (yaLogoState.x + LOGO_WIDTH / 2 >= yaLogoCanvas.width) {
-    drawingCallback({ x: yaLogoState.x - yaLogoCanvas.width, y: yaLogoState.y });
+    logoOrigins.push({ x: yaLogoCanvas.width + yaLogoState.x, y: yaLogoState.y });
+  } else if (yaLogoState.x + LOGO_WIDTH / 2 >= yaLogoCanvas.width) {
+    logoOrigins.push({ x: yaLogoState.x - yaLogoCanvas.width, y: yaLogoState.y });
   }
 
   if (yaLogoState.y - LOGO_WIDTH / 2 <= 0) {
-    drawingCallback({ x: yaLogoState.x, y: yaLogoCanvas.height + yaLogoState.y });
+    logoOrigins.push(...logoOrigins.map(origin => ({ x: origin.x, y: yaLogoCanvas.height + origin.y })));
+  } else if (yaLogoState.y + LOGO_WIDTH / 2 >= yaLogoCanvas.height) {
+    logoOrigins.push(...logoOrigins.map(origin => ({ x: origin.x, y: origin.y - yaLogoCanvas.height })));
   }
 
-  if (yaLogoState.y + LOGO_WIDTH / 2 >= yaLogoCanvas.height) {
-    drawingCallback({ x: yaLogoState.x, y: yaLogoState.y - yaLogoCanvas.height });
-  }
+  logoOrigins.map(origin => drawingCallback(origin));
 }
 
 function update() {
-  // if (yaLogoState.x + LOGO_WIDTH / 2 >= yaLogoCanvas.width) {
-  //   deltaX = -2;
-  // } else if (yaLogoState.x - LOGO_WIDTH / 2 <= 0) {
-  //   deltaX = 2;
-  // }
-
-  // yaLogoState.x += deltaX;
-
   pressedKeysHandler();
 
   correctBoundaries();
 
-  if (
-    yaLogoState.pressedKeys.ArrowLeft &&
-    yaLogoState.pressedKeys.ArrowRight &&
-    yaLogoState.pressedKeys.ArrowUp &&
-    yaLogoState.pressedKeys.ArrowDown
-  ) {
-    console.log('loh');
-  }
+  // if (
+  //   yaLogoState.pressedKeys.ArrowLeft &&
+  //   yaLogoState.pressedKeys.ArrowRight &&
+  //   yaLogoState.pressedKeys.ArrowUp &&
+  //   yaLogoState.pressedKeys.ArrowDown
+  // ) {
+  //   console.log('отпути');
+  // }
 }
 
 function keyboardHandler(event) {
-  yaLogoState.pressedKeys[event.code] = event.type === 'keydown' ? true : false;
-
-  console.log(yaLogoState);
+  if (Object.keys(yaLogoState.pressedKeys).includes(event.code)) {
+    yaLogoState.pressedKeys[event.code] = event.type === 'keydown' ? true : false;
+  }
 }
 
 window.addEventListener('keydown', keyboardHandler, false);
@@ -115,9 +105,9 @@ function correctBoundaries() {
 function animate() {
   ctx.clearRect(0, 0, yaLogoCanvas.width, yaLogoCanvas.height);
 
-  isWrapedDraw(logoDraw);
-
   update();
+
+  wrapedDraw(logoDraw);
 
   requestAnimationFrame(animate);
 }
