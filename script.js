@@ -1,15 +1,20 @@
-const yaLogoCanvas = document.getElementById('yaLogo');
+const yaLogoCanvas = document.getElementById('canvas');
 const ctx = yaLogoCanvas.getContext('2d');
 
-const RECT_WIDTH = 16;
+const VERTICAL_LINE_LENGTH = 150;
+const HORIZONTAL_LINE_LENGTH = 100;
 const GAP = 22;
+const LINE_WIDTH = 16;
+const LINE_WIDTH_HALF = LINE_WIDTH / 2;
+
 const LOGO_WIDTH = 176;
 const LOGO_HEIGHT = 188;
+
 const DELTA = 25;
 
 const yaLogoState = {
-  x: yaLogoCanvas.width / 2,
-  y: yaLogoCanvas.height / 2,
+  x: 112,
+  y: 106,
   pressedKeys: {
     ArrowLeft: false,
     ArrowUp: false,
@@ -18,30 +23,42 @@ const yaLogoState = {
   },
 };
 
-function logoDraw(center) {
-  // ctx.save();
+function drawLogoByLines(position) {
+  ctx.save();
 
-  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = LINE_WIDTH;
 
-  ctx.fillRect(center.x - LOGO_WIDTH / 2 + RECT_WIDTH + GAP, center.y - LOGO_HEIGHT / 2, 100, RECT_WIDTH);
-  ctx.fillRect(center.x - LOGO_WIDTH / 2, RECT_WIDTH + GAP + center.y - LOGO_HEIGHT / 2, RECT_WIDTH, 150);
-  ctx.fillRect(center.x - LOGO_WIDTH / 2 + 160, RECT_WIDTH + GAP + center.y - LOGO_HEIGHT / 2, RECT_WIDTH, 150);
+  ctx.beginPath();
+  ctx.moveTo(position.x + LINE_WIDTH + GAP, position.y + LINE_WIDTH_HALF);
+  ctx.lineTo(position.x + LINE_WIDTH + GAP + HORIZONTAL_LINE_LENGTH, position.y + LINE_WIDTH_HALF);
+  ctx.stroke();
 
-  // ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(position.x + LINE_WIDTH_HALF, position.y + LINE_WIDTH + GAP);
+  ctx.lineTo(position.x + LINE_WIDTH_HALF, position.y + LINE_WIDTH + GAP + VERTICAL_LINE_LENGTH);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(position.x + LOGO_WIDTH - LINE_WIDTH_HALF, position.y + LINE_WIDTH + GAP);
+  ctx.lineTo(position.x + LOGO_WIDTH - LINE_WIDTH_HALF, position.y + LINE_WIDTH + GAP + VERTICAL_LINE_LENGTH);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function wrapedDraw(drawingCallback) {
   const logoOrigins = [yaLogoState];
 
-  if (yaLogoState.x - LOGO_WIDTH / 2 <= 0) {
+  if (yaLogoState.x - LINE_WIDTH_HALF <= 0) {
     logoOrigins.push({ x: yaLogoCanvas.width + yaLogoState.x, y: yaLogoState.y });
-  } else if (yaLogoState.x + LOGO_WIDTH / 2 >= yaLogoCanvas.width) {
+  } else if (yaLogoState.x + LINE_WIDTH_HALF + LOGO_WIDTH >= yaLogoCanvas.width) {
     logoOrigins.push({ x: yaLogoState.x - yaLogoCanvas.width, y: yaLogoState.y });
   }
 
-  if (yaLogoState.y - LOGO_WIDTH / 2 <= 0) {
+  if (yaLogoState.y - LINE_WIDTH_HALF <= 0) {
     logoOrigins.push(...logoOrigins.map(origin => ({ x: origin.x, y: yaLogoCanvas.height + origin.y })));
-  } else if (yaLogoState.y + LOGO_WIDTH / 2 >= yaLogoCanvas.height) {
+  } else if (yaLogoState.y + LINE_WIDTH_HALF + LOGO_HEIGHT >= yaLogoCanvas.height) {
     logoOrigins.push(...logoOrigins.map(origin => ({ x: origin.x, y: origin.y - yaLogoCanvas.height })));
   }
 
@@ -66,6 +83,8 @@ function update() {
 function keyboardHandler(event) {
   if (Object.keys(yaLogoState.pressedKeys).includes(event.code)) {
     yaLogoState.pressedKeys[event.code] = event.type === 'keydown' ? true : false;
+
+    console.log('yaLogoState:', yaLogoState);
   }
 }
 
@@ -105,9 +124,17 @@ function correctBoundaries() {
 function animate() {
   ctx.clearRect(0, 0, yaLogoCanvas.width, yaLogoCanvas.height);
 
+  ctx.save();
+
+  ctx.fillStyle = '#000000';
+
+  ctx.fillRect(0, 0, yaLogoCanvas.width, yaLogoCanvas.height);
+
+  ctx.restore();
+
   update();
 
-  wrapedDraw(logoDraw);
+  wrapedDraw(drawLogoByLines);
 
   requestAnimationFrame(animate);
 }
